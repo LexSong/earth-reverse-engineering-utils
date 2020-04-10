@@ -1,7 +1,8 @@
 import sys
 from collections import defaultdict
 from urllib.request import urlopen
-from proto.BulkOrPlanetoid_pb2 import BulkOrPlanetoid
+from proto.rocktree_pb2 import BulkMetadata
+from proto.rocktree_pb2 import PlanetoidMetadata
 
 from octant_to_latlong import octant_to_latlong
 from octant_to_latlong import LatLonBox
@@ -15,20 +16,18 @@ def urlread(url):
         return f.read()
 
 
-def read_protobuf(url):
-    data = BulkOrPlanetoid()
-    data.ParseFromString(urlread(url))
-    return data
-
-
 def read_planetoid_metadata():
     url = URL_PREFIX + "PlanetoidMetadata"
-    return read_protobuf(url)
+    metadata = PlanetoidMetadata()
+    metadata.ParseFromString(urlread(url))
+    return metadata
 
 
 def read_bulk_metadata(path, epoch):
     url = URL_PREFIX + f"BulkMetadata/pb=!1m2!1s{path}!2u{epoch}"
-    return read_protobuf(url)
+    metadata = BulkMetadata()
+    metadata.ParseFromString(urlread(url))
+    return metadata
 
 
 def parse_path_id(path_id):
@@ -59,8 +58,8 @@ class NodeData(object):
 
     @staticmethod
     def from_bulk_data(bulk):
-        bulk_path = bulk.head_node.path
-        return [NodeData(bulk_path, x.path_id) for x in bulk.data]
+        bulk_path = bulk.head_node_key.path
+        return [NodeData(bulk_path, x.path_and_flags) for x in bulk.node_metadata]
 
 
 class OverlappingOctants(object):
@@ -90,7 +89,7 @@ print(input_box)
 overlapping_octants = OverlappingOctants(input_box)
 
 planetoid_metadata = read_planetoid_metadata()
-epoch = planetoid_metadata.data[0].epoch
+epoch = planetoid_metadata.root_node_metadata.epoch
 bulk = read_bulk_metadata('', epoch)
 
 overlapping_octants.update_bulk_data(bulk)
