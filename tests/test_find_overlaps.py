@@ -1,12 +1,19 @@
 import subprocess
 
 
-def test_find_overlaps():
+def _test_command(parameters):
+    command = "python find_overlaps.py " + parameters
     output = subprocess.check_output(command, universal_newlines=True)
     assert output == expected
 
 
-command = "python find_overlaps.py 37.420626 37.419714 -122.085045 -122.083275"
+def test_find_overlaps():
+    _test_command("37.419714, -122.083275 37.420626, -122.085045")
+    _test_command("37.419714, -122.085045 37.420626, -122.083275")
+    _test_command("37.420626, -122.083275 37.419714, -122.085045")
+    _test_command("37.420626, -122.085045 37.419714, -122.083275")
+
+
 expected = """LatLonBox(north=37.420626, south=37.419714, west=-122.085045, east=-122.083275)
 [Octant level 1]
 2

@@ -86,9 +86,15 @@ def find_overlaps(bbox, max_octants_per_level):
     return overlapping_octants
 
 
+def args_to_bbox(args):
+    args = [float(x.rstrip(",")) for x in args]
+    bottom, top = sorted([args[0], args[2]])
+    left, right = sorted([args[1], args[3]])
+    return LatLonBox(north=top, south=bottom, west=left, east=right)
+
+
 if __name__ == "__main__":
-    bbox = sys.argv[1:5]
-    bbox = LatLonBox(*(float(x) for x in bbox))
+    bbox = args_to_bbox(sys.argv[1:5])
     print(bbox)
 
     overlapping_octants = find_overlaps(bbox, max_octants_per_level=10)
