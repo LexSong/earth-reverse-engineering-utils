@@ -98,7 +98,7 @@ if __name__ == "__main__":
     print(bbox)
 
     overlapping_octants = find_overlaps(bbox, max_octants_per_level=10)
-    for level in overlapping_octants:
+    for level in sorted(overlapping_octants):
         print(f"[Octant level {level}]")
         for octant in overlapping_octants[level]:
             print(octant.path)
