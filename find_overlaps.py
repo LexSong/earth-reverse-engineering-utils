@@ -46,12 +46,19 @@ def parse_path_and_flags(data):
     return path, data
 
 
-class NodeData(object):
-    def __init__(self, bulk_path, path_and_flags, bulk_metadata_epoch):
-        path, flags = parse_path_and_flags(path_and_flags)
-        self.path = bulk_path + path
+class Octant:
+    def __init__(self, head_node_key, node_data):
+        self.head_node_key = head_node_key
+        self.node_data = node_data
+
+        path, flags = parse_path_and_flags(self.node_data.path_and_flags)
+        self.path = self.head_node_key.path + path
         self.flags = flags
-        self.bulk_metadata_epoch = bulk_metadata_epoch
+
+        self.epoch = self.node_data.bulk_metadata_epoch
+        if self.epoch == 0:
+            self.epoch = self.head_node_key.epoch
+
         self.level = len(self.path)
         self.bbox = octant_to_latlong(self.path)
 
@@ -68,14 +75,10 @@ def find_overlaps(bbox, max_octants_per_level):
 
     def update_overlapping_octants(path, head_node_epoch):
         bulk = read_bulk_metadata(path, head_node_epoch)
-        bulk_path = bulk.head_node_key.path
-        for node in bulk.node_metadata:
-            node_epoch = node.bulk_metadata_epoch
-            if node_epoch == 0:
-                node_epoch = head_node_epoch
-            node = NodeData(bulk_path, node.path_and_flags, node_epoch)
-            if bbox.overlaps_with(node.bbox):
-                overlapping_octants[node.level].append(node)
+        for node_data in bulk.node_metadata:
+            octant = Octant(bulk.head_node_key, node_data)
+            if octant.bbox.overlaps_with(bbox):
+                overlapping_octants[octant.level].append(octant)
 
     update_overlapping_octants("", root_epoch)
     for level in range(1, 21):
@@ -84,7 +87,7 @@ def find_overlaps(bbox, max_octants_per_level):
         if level % 4 == 0:
             for octant in overlapping_octants[level]:
                 if not octant.is_leaf:
-                    update_overlapping_octants(octant.path, octant.bulk_metadata_epoch)
+                    update_overlapping_octants(octant.path, octant.epoch)
 
     return overlapping_octants
 
