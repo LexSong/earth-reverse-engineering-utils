@@ -58,9 +58,6 @@ class NodeData(object):
     def is_leaf(self):
         return bool(self.flags & 4)
 
-    def is_overlap(self, bbox):
-        return LatLonBox.is_overlapping(self.bbox, bbox)
-
 
 def find_overlaps(bbox, max_octants_per_level):
     planetoid_metadata = read_planetoid_metadata()
@@ -73,7 +70,7 @@ def find_overlaps(bbox, max_octants_per_level):
         bulk_path = bulk.head_node_key.path
         for node in bulk.node_metadata:
             node = NodeData(bulk_path, node.path_and_flags)
-            if node.is_overlap(bbox):
+            if bbox.overlaps_with(node.bbox):
                 overlapping_octants[node.level].append(node)
 
     update_overlapping_octants("")

@@ -59,6 +59,9 @@ class LatLonBox(namedtuple('LatLonBox', ['north', 'south', 'west', 'east'])):
 
         return (n >= s) and (w <= e)
 
+    def overlaps_with(self, other_box):
+        return self.is_overlapping(self, other_box)
+
 
 first_latlonbox_dict = {
     '': LatLonBox(90, -90, -180, 180),
