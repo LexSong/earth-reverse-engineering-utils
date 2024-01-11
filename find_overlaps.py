@@ -58,9 +58,6 @@ class NodeData(object):
     def is_leaf(self):
         return bool(self.flags & 4)
 
-    def is_bulk(self):
-        return (self.level % 4 == 0) and (not self.is_leaf)
-
     def is_overlap(self, bbox):
         return LatLonBox.is_overlapping(self.bbox, bbox)
 
@@ -83,9 +80,10 @@ def find_overlaps(bbox, max_octants_per_level):
     for level in range(1, 21):
         if len(overlapping_octants[level]) >= max_octants_per_level:
             break
-        for octant in overlapping_octants[level]:
-            if octant.is_bulk():
-                update_overlapping_octants(octant.path)
+        if level % 4 == 0:
+            for octant in overlapping_octants[level]:
+                if not octant.is_leaf:
+                    update_overlapping_octants(octant.path)
 
     return overlapping_octants
 
