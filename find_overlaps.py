@@ -47,10 +47,11 @@ def parse_path_and_flags(data):
 
 
 class NodeData(object):
-    def __init__(self, bulk_path, path_and_flags):
+    def __init__(self, bulk_path, path_and_flags, bulk_metadata_epoch):
         path, flags = parse_path_and_flags(path_and_flags)
         self.path = bulk_path + path
         self.flags = flags
+        self.bulk_metadata_epoch = bulk_metadata_epoch
         self.level = len(self.path)
         self.bbox = octant_to_latlong(self.path)
 
@@ -61,26 +62,29 @@ class NodeData(object):
 
 def find_overlaps(bbox, max_octants_per_level):
     planetoid_metadata = read_planetoid_metadata()
-    epoch = planetoid_metadata.root_node_metadata.epoch
+    root_epoch = planetoid_metadata.root_node_metadata.epoch
 
     overlapping_octants = defaultdict(list)
 
-    def update_overlapping_octants(path):
-        bulk = read_bulk_metadata(path, epoch)
+    def update_overlapping_octants(path, head_node_epoch):
+        bulk = read_bulk_metadata(path, head_node_epoch)
         bulk_path = bulk.head_node_key.path
         for node in bulk.node_metadata:
-            node = NodeData(bulk_path, node.path_and_flags)
+            node_epoch = node.bulk_metadata_epoch
+            if node_epoch == 0:
+                node_epoch = head_node_epoch
+            node = NodeData(bulk_path, node.path_and_flags, node_epoch)
             if bbox.overlaps_with(node.bbox):
                 overlapping_octants[node.level].append(node)
 
-    update_overlapping_octants("")
+    update_overlapping_octants("", root_epoch)
     for level in range(1, 21):
         if len(overlapping_octants[level]) >= max_octants_per_level:
             break
         if level % 4 == 0:
             for octant in overlapping_octants[level]:
                 if not octant.is_leaf:
-                    update_overlapping_octants(octant.path)
+                    update_overlapping_octants(octant.path, octant.bulk_metadata_epoch)
 
     return overlapping_octants
 
