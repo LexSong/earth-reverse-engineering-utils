@@ -54,8 +54,12 @@ class NodeData(object):
         self.level = len(self.path)
         self.bbox = octant_to_latlong(self.path)
 
+    @property
+    def is_leaf(self):
+        return bool(self.flags & 4)
+
     def is_bulk(self):
-        return (len(self.path) % 4 == 0) and (not (self.flags & 4))
+        return (self.level % 4 == 0) and (not self.is_leaf)
 
     def is_overlap(self, bbox):
         return LatLonBox.is_overlapping(self.bbox, bbox)
